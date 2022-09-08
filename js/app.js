@@ -11,13 +11,43 @@ import galleryItems from './gallery-items.js'
 const galleryRef = document.querySelector('.gallery')
 const modalRef = document.querySelector('.lightbox')
 const modalImgRef = modalRef.querySelector('.lightbox__image')
+const modalOverlayRef = modalRef.querySelector('.lightbox__overlay')
 const modalCloseBtnRef = document.querySelector('[data-action=close-lightbox]')
-
+const imgPathAll = galleryItems.map((i) => i.original)
+// console.log(ImgPathAll)
 const galleryMarkup = galleryItems.map(createGalleryItemMarkup).join('')
 
-function toggleModal() {
-  modalRef.classList.toggle('is-open')
-  modalImgRef.src = ''
+galleryRef.innerHTML = galleryMarkup
+window.addEventListener('click', openModal)
+
+function openModal(e) {
+  e.preventDefault()
+  if (e.target.nodeName !== 'IMG') {
+    return
+  } else {
+    modalRef.classList.add('is-open')
+    modalImgRef.src = e.target.dataset.source
+    window.addEventListener('keyup', toggleImg)
+    window.addEventListener('keyup', closeModal)
+    window.addEventListener('click', closeModal)
+  }
+}
+
+function closeModal(e) {
+  e.preventDefault()
+  const { code, target } = e
+
+  if (
+    code === 'Escape' ||
+    target === modalCloseBtnRef ||
+    target === modalOverlayRef
+  ) {
+    modalRef.classList.remove('is-open')
+    modalImgRef.src = ''
+    window.removeEventListener('keyup', toggleImg)
+    window.removeEventListener('keyup', closeModal)
+    window.removeEventListener('click', closeModal)
+  }
 }
 
 function createGalleryItemMarkup({ preview, original, description }) {
@@ -36,21 +66,21 @@ function createGalleryItemMarkup({ preview, original, description }) {
 </li>`
 }
 
-galleryRef.innerHTML = galleryMarkup
+function toggleImg(event) {
+  const code = event.code
+  const currentIndex = imgPathAll.indexOf(modalImgRef.src)
+  let nextIndex = currentIndex
 
-galleryRef.addEventListener('click', (e) => {
-  e.preventDefault()
-  const clickedImg = e.target
-  toggleModal()
-  modalImgRef.src = clickedImg.dataset.source
-})
-
-modalRef.addEventListener('click', (e) => {
-  e.preventDefault()
-  const target = e.target
-  target === modalCloseBtnRef || target !== modalImgRef ? toggleModal() : null
-})
-
-window.addEventListener('keyup', (e) => {
-  e.key === 'Escape' ? toggleModal() : null
-})
+  switch (code) {
+    case 'ArrowLeft':
+      currentIndex > 0 ? (nextIndex -= 1) : (nextIndex = imgPathAll.length - 1)
+      break
+    case 'ArrowRight':
+      currentIndex < imgPathAll.length - 1 ? (nextIndex += 1) : (nextIndex = 0)
+      break
+    default:
+      break
+  }
+  // check index to prevent error
+  modalImgRef.src = imgPathAll[nextIndex]
+}
